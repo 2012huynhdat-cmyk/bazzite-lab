@@ -1,0 +1,7 @@
+name: bazzite-lab
+base_image: ghcr.io/ublue-os/bazzite-nvidia-open:stable
+default_tag: latest
+package_manager: dnf
+enabled_modules:
+  - base
+dotfiles: []
