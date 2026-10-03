@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Wayland Lab — Hyprland + DMS
+Comment=Isolated bazzite-lab session
+Exec=/usr/bin/bazzite-lab-session hyprland dms
+TryExec=/usr/bin/bazzite-lab-session
+Type=Application
+DesktopNames=Hyprland;

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Wayland Lab — KineticWE + Noctalia KWE
+Comment=Isolated bazzite-lab session
+Exec=/usr/bin/bazzite-lab-session kineticwe native
+TryExec=/usr/bin/bazzite-lab-session
+Type=Application
+DesktopNames=KineticWE;

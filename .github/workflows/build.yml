@@ -24,6 +24,7 @@ jobs:
   build_push:
     name: Build and push image
     runs-on: ubuntu-26.04
+    timeout-minutes: 120
 
     permissions:
       contents: read

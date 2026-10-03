@@ -1,0 +1,62 @@
+#!/bin/bash
+set -euo pipefail
+compositor=${1:?Usage: bazzite-lab-session COMPOSITOR SHELL}
+shell=${2:?}
+case "$compositor:$shell" in
+    niri:dms|niri:noctalia|niri:minimal|hyprland:dms|hyprland:noctalia|hyprland:minimal|kineticwe:native) ;;
+    *) echo 'Unsupported Wayland Lab session' >&2; exit 2 ;;
+esac
+export BAZZITE_LAB_PROFILE="$compositor-$shell"
+export BAZZITE_LAB_CONFIG_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/bazzite-lab"
+profile="$BAZZITE_LAB_CONFIG_ROOT/$BAZZITE_LAB_PROFILE"
+mkdir -p "$profile"
+export XDG_SESSION_TYPE=wayland
+case "$compositor" in
+    niri)
+        export XDG_CURRENT_DESKTOP=niri
+        mkdir -p "$profile/niri"
+        [[ -f "$profile/niri/config.kdl" ]] || cp /usr/share/bazzite-lab/niri/config.kdl "$profile/niri/config.kdl"
+        export NIRI_CONFIG="$profile/niri/config.kdl"
+        exec niri-session
+        ;;
+    hyprland)
+        export XDG_CURRENT_DESKTOP=Hyprland
+        mkdir -p "$profile/hypr"
+        [[ -f "$profile/hypr/hyprland.conf" ]] || cp /usr/share/bazzite-lab/hypr/hyprland.conf "$profile/hypr/hyprland.conf"
+        [[ -f "$profile/hypr/hyprland-gui.conf" ]] || touch "$profile/hypr/hyprland-gui.conf"
+        exec uwsm start -- /usr/bin/Hyprland --config "$profile/hypr/hyprland.conf"
+        ;;
+    kineticwe)
+        export XDG_CURRENT_DESKTOP=KineticWE
+        export KWE_CONFIG_HOME="$profile/kineticwe"
+        export KWE_REAL_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+        mkdir -p "$KWE_CONFIG_HOME"
+        export XDG_DATA_DIRS="/usr/lib/kineticwe/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+        export WAYLAND_DISPLAY=wayland-kineticwe-lab
+        cleanup() {
+            kill "${shell_pid:-}" "${compositor_pid:-}" 2>/dev/null || true
+            wait "${shell_pid:-}" "${compositor_pid:-}" 2>/dev/null || true
+            systemctl --user stop graphical-session.target
+            systemctl --user unset-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP BAZZITE_LAB_PROFILE BAZZITE_LAB_CONFIG_ROOT KWE_CONFIG_HOME KWE_REAL_CONFIG_HOME
+        }
+        trap cleanup EXIT
+        trap 'exit 0' TERM INT HUP
+        env XDG_CONFIG_HOME="$KWE_CONFIG_HOME" \
+            LD_LIBRARY_PATH=/usr/lib/kineticwe/lib64 \
+            QT_PLUGIN_PATH=/usr/lib/kineticwe/lib64/qt6/plugins:/usr/lib/kineticwe/lib64/plugins \
+            QML_IMPORT_PATH=/usr/lib/kineticwe/lib64/qml:/usr/lib/kineticwe/lib64/qt6/qml \
+            /usr/lib/kineticwe/bin/kinetic-we --socket "$WAYLAND_DISPLAY" --xwayland &
+        compositor_pid=$!
+        for ((attempt=0; attempt<100; attempt++)); do
+            [[ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]] && break
+            kill -0 "$compositor_pid"
+            sleep 0.1
+        done
+        [[ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]]
+        dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_SESSION_TYPE XDG_CURRENT_DESKTOP XDG_DATA_DIRS BAZZITE_LAB_PROFILE BAZZITE_LAB_CONFIG_ROOT KWE_CONFIG_HOME KWE_REAL_CONFIG_HOME
+        systemctl --user start graphical-session.target
+        bazzite-lab-shell &
+        shell_pid=$!
+        wait "$compositor_pid"
+        ;;
+esac

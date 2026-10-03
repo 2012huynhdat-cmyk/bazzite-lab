@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Wayland Lab — niri + Waybar minimal
+Comment=Isolated bazzite-lab session
+Exec=/usr/bin/bazzite-lab-session niri minimal
+TryExec=/usr/bin/bazzite-lab-session
+Type=Application
+DesktopNames=niri;

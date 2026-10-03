@@ -1,0 +1,19 @@
+input {
+    keyboard { xkb { layout "fr"; }; };
+    touchpad { natural-scroll; };
+}
+layout { gaps 12; focus-ring { width 2; }; }
+spawn-at-startup "bazzite-lab-shell"
+prefer-no-csd
+binds {
+    Mod+Return { spawn "foot"; }
+    Mod+D { spawn "fuzzel"; }
+    Mod+Q { close-window; }
+    Mod+H { focus-column-left; }
+    Mod+L { focus-column-right; }
+    Mod+J { focus-window-down; }
+    Mod+K { focus-window-up; }
+    Mod+Shift+E { quit; }
+    Mod+F { maximize-column; }
+    Print { screenshot; }
+}

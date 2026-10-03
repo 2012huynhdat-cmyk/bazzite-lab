@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+profile=${BAZZITE_LAB_PROFILE:?Launch a Wayland Lab session first}
+case "$profile" in niri-*|hyprland-*|kineticwe-*) ;; *) exit 2 ;; esac
+export XDG_CONFIG_HOME="${BAZZITE_LAB_CONFIG_ROOT:?}/$profile"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/bazzite-lab/$profile"
+mkdir -p "$XDG_CONFIG_HOME" "$XDG_CACHE_HOME"
+case "$profile" in
+    *-dms) exec dms run ;;
+    *-noctalia) exec noctalia ;;
+    kineticwe-native) exec /usr/lib/kineticwe/bin/noctalia-kwe ;;
+    *-minimal)
+        mako &
+        notifier=$!
+        trap 'kill "$notifier" 2>/dev/null || true' EXIT
+        waybar &
+        wait $!
+        ;;
+    *) exit 2 ;;
+esac
