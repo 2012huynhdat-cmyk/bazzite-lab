@@ -1,0 +1,39 @@
+name: Wayland integration preflight
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
+      - name: Inspect pinned KineticWE source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init /tmp/kineticwe-source
+          git -C /tmp/kineticwe-source remote add origin https://gitlab.com/theblackdon/kineticwe.git
+          git -C /tmp/kineticwe-source fetch --depth=1 origin 219f0d8dc0d57f1337603c31ccedbb0c95351057
+          git -C /tmp/kineticwe-source checkout --detach FETCH_HEAD
+          test "$(git -C /tmp/kineticwe-source rev-parse HEAD)" = 219f0d8dc0d57f1337603c31ccedbb0c95351057
+          cd /tmp/kineticwe-source
+          git ls-files '*spec*' '*CMakeLists.txt' '*deps*' '*session*' '*desktop' '*service*'
+          cat CMakeLists.txt
+          find . -maxdepth 3 -name '*.spec' -exec cat '{}' \;
+          cat install-build-deps.sh install-runtime-deps.sh
+      - name: Check Fedora 44 package availability
+        run: |
+          podman run --rm --user 0 --entrypoint bash ghcr.io/ublue-os/bazzite-nvidia-open:stable -c '
+            set -euo pipefail
+            cat /etc/os-release
+            dnf5 repoquery niri noctalia hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gnome xwayland-satellite
+            dnf5 -y copr enable avengemedia/danklinux
+            dnf5 -y copr enable avengemedia/dms
+            dnf5 -y copr enable solopasha/hyprland
+            dnf5 repoquery dms quickshell-git hyprland xdg-desktop-portal-hyprland
+          '
