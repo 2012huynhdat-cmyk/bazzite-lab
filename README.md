@@ -28,9 +28,10 @@ The output is `localhost/bazzite-lab:latest`. The Containerfile runs
 `bootc container lint` at the end; build success includes that check.
 The Justfile supplies the project OCI labels from `image-template.env`.
 
-Pull requests to `main` run the existing container build workflow, including
-the template's rpm-ostree rechunking step. Rechunking prepares OCI layers;
-it does not layer packages onto the host. PR builds do not publish or sign images.
+Pull requests to `main` run the container build workflow and verify image
+identity. The base already supplies chunked layers. The optional legacy
+rootfs rechunker is not used: it loses project labels and inherited OCI
+configuration. PR builds do not publish or sign images.
 The existing main-branch workflow publishes to
 `ghcr.io/2012huynhdat-cmyk/bazzite-lab:latest` and signs with Cosign.
 Before publication, configure the repository's `SIGNING_SECRET` and retain
