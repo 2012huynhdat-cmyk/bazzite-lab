@@ -16,26 +16,34 @@ fetch() {
 fetch source https://gitlab.com/theblackdon/kineticwe.git "$KINETICWE_COMMIT"
 fetch kglobalacceld https://invent.kde.org/plasma/kglobalacceld.git "$KGLOBALACCELD_COMMIT"
 fetch kdecoration https://invent.kde.org/plasma/kdecoration.git "$KDECORATION_COMMIT"
+# Use upstream packaging's private sonames as well as a private prefix.
+cat >> kglobalacceld/CMakeLists.txt <<'KGA'
+set_target_properties(KGlobalAccelD PROPERTIES OUTPUT_NAME kineticwe-globalacceld)
+KGA
+cat >> kdecoration/CMakeLists.txt <<'KDECO'
+set_target_properties(kdecorations3 PROPERTIES OUTPUT_NAME kineticwe-decoration)
+set_target_properties(kdecorations3private PROPERTIES OUTPUT_NAME kineticwe-decoration-private)
+KDECO
 mapfile -t deps < /ctx/kineticwe-build-deps.txt
 dnf5 install -y rpm-build git "${deps[@]}"
 # Keep all fork resources and libraries under a private prefix. No stock KDE
 # files, Noctalia resources, login manager, or host configuration are replaced.
-cmake -S kglobalacceld -B kglobalacceld-build -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_INSTALL_RPATH="$prefix/lib64"
+cmake -S kglobalacceld -B kglobalacceld-build -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_INSTALL_LIBEXECDIR=libexec -DKDE_INSTALL_LIBEXECDIR=libexec -DCMAKE_INSTALL_RPATH="$prefix/lib64"
 cmake --build kglobalacceld-build
 cmake --install kglobalacceld-build
-cmake -S kdecoration -B kdecoration-build -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_INSTALL_RPATH="$prefix/lib64"
+cmake -S kdecoration -B kdecoration-build -GNinja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_INSTALL_LIBEXECDIR=libexec -DKDE_INSTALL_LIBEXECDIR=libexec -DCMAKE_INSTALL_RPATH="$prefix/lib64"
 cmake --build kdecoration-build
 cmake --install kdecoration-build
 cmake -S source -B compositor-build -GNinja \
     -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
-    -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib64 \
+    -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_INSTALL_LIBEXECDIR=libexec -DKDE_INSTALL_LIBEXECDIR=libexec \
     -DCMAKE_PREFIX_PATH="$prefix" -DCMAKE_INSTALL_RPATH="$prefix/lib64" \
     -DKWIN_BUILD_KCMS=OFF -DCMAKE_DISABLE_FIND_PACKAGE_KF6DocTools=ON
 cmake --build compositor-build
 cmake --install compositor-build
 cmake -S source/portal/xdg-desktop-portal-kwe -B portal-build -GNinja \
     -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
-    -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib64 \
+    -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_INSTALL_LIBDIR=lib64 -DCMAKE_INSTALL_LIBEXECDIR=libexec -DKDE_INSTALL_LIBEXECDIR=libexec \
     -DCMAKE_INSTALL_RPATH="$prefix/lib64"
 cmake --build portal-build
 cmake --install portal-build
