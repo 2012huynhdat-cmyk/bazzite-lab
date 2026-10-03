@@ -31,9 +31,13 @@ jobs:
           podman run --rm --user 0 --entrypoint bash ghcr.io/ublue-os/bazzite-nvidia-open:stable -c '
             set -euo pipefail
             cat /etc/os-release
-            dnf5 repoquery niri noctalia hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gnome xwayland-satellite
-            dnf5 -y copr enable avengemedia/danklinux
-            dnf5 -y copr enable avengemedia/dms
-            dnf5 -y copr enable solopasha/hyprland
-            dnf5 repoquery dms quickshell-git hyprland xdg-desktop-portal-hyprland
+            dnf5 repoquery --latest-limit=1 niri noctalia dms quickshell hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gnome xwayland-satellite qt6-qtbase kf6-kconfig extra-cmake-modules uv
+            for project in avengemedia/danklinux avengemedia/dms solopasha/hyprland; do
+              if dnf5 -y copr enable "$project"; then
+                echo "AVAILABLE: $project"
+              else
+                echo "UNAVAILABLE FOR FEDORA 44: $project"
+              fi
+            done
+            dnf5 repoquery --latest-limit=1 dms quickshell quickshell-git hyprland xdg-desktop-portal-hyprland
           '
