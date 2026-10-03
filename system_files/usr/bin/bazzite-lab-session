@@ -34,7 +34,8 @@ case "$compositor" in
         compositor_cache="${XDG_CACHE_HOME:-$HOME/.cache}/bazzite-lab/kineticwe-compositor"
         mkdir -p "$compositor_cache"
         unset KDE_FULL_SESSION KDE_SESSION_VERSION XDG_MENU_PREFIX XAUTHORITY
-        export XDG_DATA_DIRS="/usr/lib/kineticwe/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+        original_data_dirs="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+        export XDG_DATA_DIRS="/usr/lib/kineticwe/share:$original_data_dirs"
         export WAYLAND_DISPLAY=wayland-kineticwe-lab
         declare -A existing_x11=()
         for socket in /tmp/.X11-unix/X*; do
@@ -43,8 +44,14 @@ case "$compositor" in
         cleanup() {
             kill "${shell_pid:-}" "${compositor_pid:-}" 2>/dev/null || true
             wait "${shell_pid:-}" "${compositor_pid:-}" 2>/dev/null || true
-            systemctl --user stop bazzite-lab-kineticwe-session.target graphical-session.target
-            systemctl --user unset-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP BAZZITE_LAB_PROFILE BAZZITE_LAB_CONFIG_ROOT KWE_CONFIG_HOME KWE_REAL_CONFIG_HOME XDG_DATA_DIRS
+            systemctl --user stop bazzite-lab-kineticwe-session.target graphical-session.target || true
+            # D-Bus activation has no unset operation. Clear session-specific
+            # values and restore the normal data path before the next login.
+            dbus-update-activation-environment --systemd XDG_DATA_DIRS="$original_data_dirs" \
+                WAYLAND_DISPLAY= DISPLAY= XDG_CURRENT_DESKTOP= \
+                BAZZITE_LAB_PROFILE= BAZZITE_LAB_CONFIG_ROOT= \
+                KWE_CONFIG_HOME= KWE_REAL_CONFIG_HOME= || true
+            systemctl --user unset-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP BAZZITE_LAB_PROFILE BAZZITE_LAB_CONFIG_ROOT KWE_CONFIG_HOME KWE_REAL_CONFIG_HOME || true
         }
         trap cleanup EXIT
         trap 'exit 0' TERM INT HUP
