@@ -1,0 +1,5 @@
+description: Stage 1 base only; no package, service, file or script changes
+packages: []
+remove: []
+files: []
+services: []
