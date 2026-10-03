@@ -58,6 +58,7 @@ class Sessions(unittest.TestCase):
         self.assertEqual(len({x.get("NOCTALIA_CONFIG_HOME", x.get("XDG_CONFIG_HOME")) for x in outputs}), 3)
         self.assertNotIn("XDG_CONFIG_HOME", outputs[1])
         self.assertIn("NOCTALIA_STATE_HOME", outputs[1])
+        self.assertTrue(outputs[1]["NOCTALIA_DATA_HOME"].endswith("/bazzite-lab/niri-noctalia"))
         self.assertNotEqual(outputs[0]["XDG_STATE_HOME"], outputs[2]["XDG_STATE_HOME"])
         self.assertEqual(len({x["XDG_CACHE_HOME"] for x in outputs}), 3)
 

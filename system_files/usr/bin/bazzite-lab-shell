@@ -8,6 +8,7 @@ case "$profile" in
     *-noctalia|kineticwe-native)
         export NOCTALIA_CONFIG_HOME="$profile_config"
         export NOCTALIA_STATE_HOME="$profile_state"
+        export NOCTALIA_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/bazzite-lab/$profile"
         ;;
     *) export XDG_CONFIG_HOME="$profile_config"; export XDG_STATE_HOME="$profile_state" ;;
 esac
