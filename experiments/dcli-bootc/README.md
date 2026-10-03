@@ -30,9 +30,14 @@ It does not run upstream installation scripts or invoke dcli init/build/update,
 dotfiles, switch, rollback or reboot. Generation uses a temporary XDG config path
 and never registers a project in the user's configuration.
 
-Build mode uses a temporary copy of the Universal Blue Justfile to retain its
+Build mode uses a temporary copy of the Universal Blue Justfile for its
 OCI labels and build/rechunk recipes. That copy receives `DCLI_BUILD_HASH`, which
 the generated Containerfile requires for reliable customization cache invalidation.
+The inherited rechunk recipe uses `--rootfs`, which drops the input image's
+project labels. The first CI run detected this; the experimental adapter now
+passes the existing OCI and Artifact Hub labels explicitly to rechunking.
+The production Justfile is untouched; preserving its image configuration
+through rechunking needs a separate review before publication.
 The generated files are not edited. The image is tagged locally as
 `localhost/bazzite-lab-dcli-eval:evaluation`; no registry login, push or signing
 occurs. After rechunking, the script checks title/vendor/bootc labels and compares
@@ -76,3 +81,8 @@ review regardless of which recipe manager is used.
 Image build and bootc lint success cannot validate NVIDIA, booting or rollback
 on the target machine. Flatpak configuration in machine-local `/var` is also
 not validated by RPM equivalence.
+
+The first build of the raw generated image returned bootc lint exit code zero,
+but emitted `var-log` and `var-tmpfiles` warnings for the DNF log and Flatpak
+state. The experiment retains those warnings as evidence rather than modifying
+the generated script to conceal its defaults.

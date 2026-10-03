@@ -74,6 +74,28 @@ export GIT_WORK_TREE="$repo_dir"
 (
     cd "$context"
     just build bazzite-lab-dcli-eval evaluation
+    podman image inspect localhost/bazzite-lab-dcli-eval:evaluation > "$output/pre-rechunk-inspect.json"
+    # The inherited recipe uses --rootfs, which does not retain image labels.
+    # Preserve project identity explicitly in the experimental recipe only.
+    python3 - "$context/Justfile" "$output/pre-rechunk-inspect.json" <<'PY'
+import json
+import pathlib
+import shlex
+import sys
+justfile = pathlib.Path(sys.argv[1])
+image = json.load(open(sys.argv[2]))[0]
+labels = image.get("Config", {}).get("Labels") or image.get("Labels") or {}
+assert labels["org.opencontainers.image.title"] == "bazzite-lab"
+args = []
+for key, value in sorted(labels.items()):
+    if key.startswith(("org.opencontainers.image.", "io.artifacthub.package.")):
+        assert "\n" not in key + value
+        args.append("--label=" + shlex.quote(key + "=" + value))
+text = justfile.read_text()
+needle = "      --rootfs /rpm-ostree " + chr(92)
+assert text.count(needle) == 1
+justfile.write_text(text.replace(needle, needle + "\n      " + " ".join(args) + " " + chr(92)))
+PY
     just ostree-rechunk bazzite-lab-dcli-eval evaluation
 )
 podman image inspect localhost/bazzite-lab-dcli-eval:evaluation > "$output/image-inspect.json"
@@ -82,7 +104,8 @@ podman image inspect localhost/bazzite-lab-dcli-eval:evaluation > "$output/image
 python3 - "$output/image-inspect.json" <<'PY'
 import json
 import sys
-labels = json.load(open(sys.argv[1]))[0]["Labels"]
+image = json.load(open(sys.argv[1]))[0]
+labels = image.get("Config", {}).get("Labels") or image.get("Labels") or {}
 assert labels["org.opencontainers.image.title"] == "bazzite-lab"
 assert labels["org.opencontainers.image.vendor"] == "2012huynhdat-cmyk"
 assert labels["containers.bootc"] == "1"
