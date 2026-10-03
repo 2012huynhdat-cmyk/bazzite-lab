@@ -1,0 +1,86 @@
+#!/bin/bash
+set -euo pipefail
+compositor=${1:?Usage: bazzite-lab-session COMPOSITOR SHELL}
+shell=${2:?}
+case "$compositor:$shell" in
+    niri:dms|niri:noctalia|niri:minimal|hyprland:dms|hyprland:noctalia|hyprland:minimal|kineticwe:native) ;;
+    *) echo 'Unsupported Wayland Lab session' >&2; exit 2 ;;
+esac
+export BAZZITE_LAB_PROFILE="$compositor-$shell"
+export BAZZITE_LAB_CONFIG_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/bazzite-lab"
+profile="$BAZZITE_LAB_CONFIG_ROOT/$BAZZITE_LAB_PROFILE"
+mkdir -p "$profile"
+export XDG_SESSION_TYPE=wayland
+case "$compositor" in
+    niri)
+        export XDG_CURRENT_DESKTOP=niri
+        mkdir -p "$profile/niri"
+        [[ -f "$profile/niri/config.kdl" ]] || cp /usr/share/bazzite-lab/niri/config.kdl "$profile/niri/config.kdl"
+        export NIRI_CONFIG="$profile/niri/config.kdl"
+        exec niri-session
+        ;;
+    hyprland)
+        export XDG_CURRENT_DESKTOP=Hyprland
+        mkdir -p "$profile/hypr"
+        config=hyprland.lua
+        [[ -f "$profile/hypr/$config" ]] || cp "/usr/share/bazzite-lab/hypr/$config" "$profile/hypr/$config"
+        exec uwsm start -- /usr/bin/Hyprland --config "$profile/hypr/$config"
+        ;;
+    kineticwe)
+        export XDG_CURRENT_DESKTOP=KineticWE
+        export KWE_CONFIG_HOME="$profile/kineticwe"
+        export KWE_REAL_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+        mkdir -p "$KWE_CONFIG_HOME"
+        compositor_cache="${XDG_CACHE_HOME:-$HOME/.cache}/bazzite-lab/kineticwe-compositor"
+        mkdir -p "$compositor_cache"
+        unset KDE_FULL_SESSION KDE_SESSION_VERSION XDG_MENU_PREFIX XAUTHORITY
+        original_data_dirs="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+        export XDG_DATA_DIRS="/usr/lib/kineticwe/share:$original_data_dirs"
+        export WAYLAND_DISPLAY=wayland-kineticwe-lab
+        declare -A existing_x11=()
+        for socket in /tmp/.X11-unix/X*; do
+            [[ -S "$socket" ]] && existing_x11["${socket##*/}"]=1
+        done
+        cleanup() {
+            kill "${shell_pid:-}" "${compositor_pid:-}" 2>/dev/null || true
+            wait "${shell_pid:-}" "${compositor_pid:-}" 2>/dev/null || true
+            systemctl --user stop bazzite-lab-kineticwe-session.target graphical-session.target || true
+            # D-Bus activation has no unset operation. Clear session-specific
+            # values and restore the normal data path before the next login.
+            dbus-update-activation-environment --systemd XDG_DATA_DIRS="$original_data_dirs" \
+                WAYLAND_DISPLAY= DISPLAY= XDG_CURRENT_DESKTOP= \
+                BAZZITE_LAB_PROFILE= BAZZITE_LAB_CONFIG_ROOT= \
+                KWE_CONFIG_HOME= KWE_REAL_CONFIG_HOME= || true
+            systemctl --user unset-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP BAZZITE_LAB_PROFILE BAZZITE_LAB_CONFIG_ROOT KWE_CONFIG_HOME KWE_REAL_CONFIG_HOME || true
+        }
+        trap cleanup EXIT
+        trap 'exit 0' TERM INT HUP
+        env XDG_CONFIG_HOME="$KWE_CONFIG_HOME" XDG_CACHE_HOME="$compositor_cache" \
+            LD_LIBRARY_PATH=/usr/lib/kineticwe/lib64 \
+            QT_PLUGIN_PATH=/usr/lib/kineticwe/lib64/qt6/plugins:/usr/lib/kineticwe/lib64/plugins \
+            QML_IMPORT_PATH=/usr/lib/kineticwe/lib64/qml:/usr/lib/kineticwe/lib64/qt6/qml \
+            /usr/lib/kineticwe/bin/kinetic-we --socket "$WAYLAND_DISPLAY" --xwayland --no-lockscreen &
+        compositor_pid=$!
+        for ((attempt=0; attempt<100; attempt++)); do
+            [[ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]] && break
+            kill -0 "$compositor_pid"
+            sleep 0.1
+        done
+        [[ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]]
+        unset DISPLAY
+        while read -r socket; do
+            if [[ ! -v existing_x11[$socket] ]]; then
+                export DISPLAY=":${socket#X}"
+                break
+            fi
+        done < <(find /tmp/.X11-unix -maxdepth 1 -type s -name 'X*' -printf '%f\n' | sort -V)
+        dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_SESSION_TYPE XDG_CURRENT_DESKTOP XDG_DATA_DIRS BAZZITE_LAB_PROFILE BAZZITE_LAB_CONFIG_ROOT KWE_CONFIG_HOME KWE_REAL_CONFIG_HOME
+        if [[ -n ${DISPLAY:-} ]]; then
+            dbus-update-activation-environment --systemd DISPLAY
+        fi
+        systemctl --user start bazzite-lab-kineticwe-session.target
+        bazzite-lab-shell &
+        shell_pid=$!
+        wait "$compositor_pid"
+        ;;
+esac

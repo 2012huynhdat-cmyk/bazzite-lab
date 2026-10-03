@@ -1,0 +1,36 @@
+#!/bin/bash
+set -euo pipefail
+profile=${BAZZITE_LAB_PROFILE:?Launch a Wayland Lab session first}
+case "$profile" in niri-*|hyprland-*|kineticwe-*) ;; *) exit 2 ;; esac
+profile_config="${BAZZITE_LAB_CONFIG_ROOT:?}/$profile"
+profile_state="${XDG_STATE_HOME:-$HOME/.local/state}/bazzite-lab/$profile"
+case "$profile" in
+    *-noctalia|kineticwe-native)
+        export NOCTALIA_CONFIG_HOME="$profile_config"
+        export NOCTALIA_STATE_HOME="$profile_state"
+        export NOCTALIA_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/bazzite-lab/$profile"
+        ;;
+    *) export XDG_CONFIG_HOME="$profile_config"; export XDG_STATE_HOME="$profile_state" ;;
+esac
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/bazzite-lab/$profile"
+mkdir -p "$profile_config" "$profile_state" "$XDG_CACHE_HOME"
+case "$profile" in
+    *-dms) exec dms run ;;
+    *-noctalia) exec noctalia ;;
+    kineticwe-native) exec /usr/lib/kineticwe/bin/noctalia-kwe ;;
+    *-minimal)
+        mkdir -p "$XDG_CONFIG_HOME/waybar"
+        [[ -f "$XDG_CONFIG_HOME/waybar/config.jsonc" ]] || cp /usr/share/bazzite-lab/waybar/config.jsonc "$XDG_CONFIG_HOME/waybar/config.jsonc"
+        [[ -f "$XDG_CONFIG_HOME/waybar/style.css" ]] || cp /usr/share/bazzite-lab/waybar/style.css "$XDG_CONFIG_HOME/waybar/style.css"
+        mako &
+        notifier=$!
+        /usr/libexec/kf6/polkit-kde-authentication-agent-1 &
+        agent=$!
+        trap 'kill "$notifier" "$agent" "${bar:-}" 2>/dev/null || true' EXIT
+        trap 'exit 0' TERM INT HUP
+        waybar &
+        bar=$!
+        wait "$bar"
+        ;;
+    *) exit 2 ;;
+esac

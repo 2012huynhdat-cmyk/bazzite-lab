@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+for binary in niri Hyprland noctalia dms qs uwsm foot waybar mako fuzzel hyprmod; do
+    command -v "$binary"
+done
+niri validate --config /usr/share/bazzite-lab/niri/config.kdl
+verification_root=$(mktemp -d /tmp/hyprland-verify.XXXXXX)
+mkdir -p "$verification_root/runtime"
+chown -R nobody:nobody "$verification_root"
+setpriv --reuid=nobody --regid=nobody --clear-groups env HOME="$verification_root" XDG_RUNTIME_DIR="$verification_root/runtime" \
+    Hyprland --verify-config --config /usr/share/bazzite-lab/hypr/hyprland.lua
+rm -rf "$verification_root"
+/usr/libexec/bazzite-lab/hyprmod/bin/python -c 'import gi, cairo, hyprmod, hyprland_config, hyprland_schema; from importlib.metadata import version; print(version("hyprmod"))'
+rpm -q niri hyprland noctalia dms
+if [[ ${1:-} != --runtime-only ]]; then
+    for binary in kinetic-we noctalia-kwe; do
+        test -x "/usr/lib/kineticwe/bin/$binary"
+        if ldd "/usr/lib/kineticwe/bin/$binary" | grep 'not found'; then
+            echo "Missing runtime dependency: $binary" >&2
+            exit 1
+        fi
+    done
+    portal=/usr/lib/kineticwe/libexec/xdg-desktop-portal-kwe
+    test -x "$portal"
+    if ldd "$portal" | grep 'not found'; then
+        echo 'Missing KWE portal runtime dependency' >&2
+        exit 1
+    fi
+    grep -Fx "Exec=$portal" /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.kwe.service
+    test -x /usr/libexec/kf6/polkit-kde-authentication-agent-1
+    test "$(cat /usr/lib/kineticwe/SOURCE_COMMIT)" = 219f0d8dc0d57f1337603c31ccedbb0c95351057
+    rpm -q kineticwe-lab
+fi

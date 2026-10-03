@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Wayland Lab — Hyprland + Waybar minimal
+Comment=Isolated bazzite-lab session
+Exec=/usr/bin/bazzite-lab-session hyprland minimal
+TryExec=/usr/bin/bazzite-lab-session
+Type=Application
+DesktopNames=Hyprland;

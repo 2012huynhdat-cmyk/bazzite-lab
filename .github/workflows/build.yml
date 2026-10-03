@@ -24,6 +24,7 @@ jobs:
   build_push:
     name: Build and push image
     runs-on: ubuntu-26.04
+    timeout-minutes: 120
 
     permissions:
       contents: read
@@ -45,6 +46,16 @@ jobs:
         shell: bash
         run: |
           just check
+
+      - name: Check session isolation and shell syntax
+        run: |
+          for script in build_files/*.sh; do
+            bash -n "$script"
+          done
+          for script in system_files/usr/bin/* system_files/usr/libexec/bazzite-lab/*; do
+            bash -n "$script"
+          done
+          python3 -m unittest discover -s tests -v
 
       - name: Image Name
         id: image-name
@@ -74,13 +85,12 @@ jobs:
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
 
-      # This is optional, this provides smaller delta updates
-      - name: Rechunk with rpm-ostree
-        id: rechunk
+      # The base is already chunked. Keep its OCI configuration: the legacy
+      # rootfs-only rechunker discards inherited config and project labels.
+      - name: Verify image identity
         run: |
-          just ostree-rechunk \
-            ${IMAGE_NAME} \
-            ${DEFAULT_TAG}
+          test "$(podman inspect --format '{{ index .Labels "org.opencontainers.image.title" }}' "${IMAGE_NAME}:${DEFAULT_TAG}")" = bazzite-lab
+          test "$(podman inspect --format '{{ index .Labels "containers.bootc" }}' "${IMAGE_NAME}:${DEFAULT_TAG}")" = 1
 
       # If you are feeling adventurous, use the new distro agnostic rechunker
       # https://github.com/coreos/chunkah
@@ -161,4 +171,3 @@ jobs:
           # https://github.com/coreos/rpm-ostree/issues/5509
           # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
           cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
-

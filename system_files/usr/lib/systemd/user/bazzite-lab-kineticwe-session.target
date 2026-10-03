@@ -1,0 +1,8 @@
+[Unit]
+Description=Bazzite Lab KineticWE session
+Requires=graphical-session.target
+BindsTo=graphical-session.target
+Before=graphical-session.target
+Wants=graphical-session-pre.target
+After=graphical-session-pre.target
+Wants=pipewire.socket pipewire.service wireplumber.service pipewire-pulse.socket

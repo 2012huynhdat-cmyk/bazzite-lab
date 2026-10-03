@@ -1,27 +1,19 @@
 #!/bin/bash
+set -euo pipefail
 
-set -ouex pipefail
-
-# Copy the contents of system_files/ of the git repo to /
-cp -avf "/ctx/system_files"/. /
-
-### Install packages
-
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
-
-# this installs a package from fedora repos
-dnf5 install -y tmux
-
-# Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
-
-#### Example for enabling a System Unit File
-
-systemctl enable podman.socket
+dnf5 install -y /kineticwe-rpms/*.rpm
+# Publish only the dedicated KWE portal's discovery files. Its resources remain
+# private; generic KDE portal discovery stays untouched.
+install -d /usr/share/xdg-desktop-portal /usr/share/dbus-1/services
+cp -a /usr/lib/kineticwe/share/xdg-desktop-portal/. /usr/share/xdg-desktop-portal/
+cp -a /usr/lib/kineticwe/share/dbus-1/services/org.freedesktop.impl.portal.desktop.kwe.service /usr/share/dbus-1/services/
+if [[ -d /usr/lib/kineticwe/lib/systemd/user ]]; then
+    cp -a /usr/lib/kineticwe/lib/systemd/user/*kwe* /usr/lib/systemd/user/
+fi
+# No shell service is globally enabled. The session config starts one shell.
+dnf5 clean all
+# DNF countme state is not part of the bootc image or its runtime filesystem.
+rm -rf /run/dnf /var/lib/dnf/repos
+install -m 0644 /ctx/sources.env /usr/share/bazzite-lab/sources.env
+rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > /usr/share/bazzite-lab/rpm-manifest.txt
+/usr/libexec/bazzite-lab/verify-image
