@@ -49,8 +49,9 @@ jobs:
 
       - name: Check session isolation and shell syntax
         run: |
-          bash -n build_files/build.sh
-          bash -n build_files/build-kineticwe.sh
+          for script in build_files/*.sh; do
+            bash -n "$script"
+          done
           for script in system_files/usr/bin/* system_files/usr/libexec/bazzite-lab/*; do
             bash -n "$script"
           done

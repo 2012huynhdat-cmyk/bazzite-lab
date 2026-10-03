@@ -1,47 +1,7 @@
 #!/bin/bash
-
 set -euo pipefail
 
-source /ctx/sources.env
-dnf5 -y copr enable avengemedia/danklinux
-dnf5 -y copr enable avengemedia/dms
-dnf5 -y copr enable nett00n/hyprland
-# Restrict external repos to packages owned by the selected projects.
-for file in /etc/yum.repos.d/*avengemedia*danklinux*.repo; do
-    sed -i '/^enabled=/a includepkgs=quickshell*,matugen,cliphist,danksearch,dgop,dankcalendar*,material-symbols-fonts' "$file"
-done
-for file in /etc/yum.repos.d/*avengemedia*dms*.repo; do
-    sed -i '/^enabled=/a includepkgs=dms,dms-cli' "$file"
-done
-for file in /etc/yum.repos.d/*nett00n*hyprland*.repo; do
-    sed -i '/^enabled=/a includepkgs=hypr*,aquamarine*,xdg-desktop-portal-hyprland,lua*,glaze*,cpptrace*,libdwarf*,tomlplusplus*' "$file"
-done
-dnf5 install -y /kineticwe-rpms/*.rpm \
-    niri noctalia hyprland uwsm xwayland-satellite \
-    xdg-desktop-portal-gnome xdg-desktop-portal-gtk xdg-desktop-portal-hyprland \
-    dms quickshell-git matugen cliphist danksearch dgop cava \
-    waybar mako fuzzel swaylock wl-clipboard foot \
-    python3-gobject python3-cairo python3-hatchling gtk4 libadwaita uv git polkit-gnome
-
-# Install HyprMod from a pinned checkout and locked, hashed Python dependencies.
-# Do not run the upstream installer or write into users' home directories.
-git init /tmp/hyprmod
-git -C /tmp/hyprmod remote add origin https://github.com/BlueManCZ/hyprmod.git
-git -C /tmp/hyprmod fetch --depth=1 origin "$HYPRMOD_COMMIT"
-git -C /tmp/hyprmod checkout --detach FETCH_HEAD
-test "$(git -C /tmp/hyprmod rev-parse HEAD)" = "$HYPRMOD_COMMIT"
-cd /tmp/hyprmod
-uv export --frozen --no-dev --no-emit-project --no-emit-package pygobject --no-emit-package pycairo -o /tmp/hyprmod-requirements.txt
-uv venv --system-site-packages --python /usr/bin/python3 /usr/libexec/bazzite-lab/hyprmod
-uv pip install --python /usr/libexec/bazzite-lab/hyprmod/bin/python --require-hashes -r /tmp/hyprmod-requirements.txt
-uv pip install --python /usr/libexec/bazzite-lab/hyprmod/bin/python --no-deps --no-build-isolation .
-cp -a data/applications/. /usr/share/applications/
-install -d /usr/share/metainfo
-cp -a data/metainfo/. /usr/share/metainfo/
-if [[ -d data/icons ]]; then
-    cp -a data/icons/. /usr/share/icons/
-fi
-cd /
+dnf5 install -y /kineticwe-rpms/*.rpm
 cp -a /ctx/system_files/usr/. /usr/
 chmod +x /usr/bin/bazzite-lab-session /usr/bin/bazzite-lab-shell /usr/bin/bazzite-lab-lock /usr/bin/hyprmod
 chmod +x /usr/libexec/bazzite-lab/verify-image
@@ -55,9 +15,6 @@ if [[ -d /usr/lib/kineticwe/lib/systemd/user ]]; then
     cp -a /usr/lib/kineticwe/lib/systemd/user/*kwe* /usr/lib/systemd/user/
 fi
 # No shell service is globally enabled. The session config starts one shell.
-dnf5 -y copr disable avengemedia/danklinux
-dnf5 -y copr disable avengemedia/dms
-dnf5 -y copr disable nett00n/hyprland
 dnf5 clean all
 install -m 0644 /ctx/sources.env /usr/share/bazzite-lab/sources.env
 rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > /usr/share/bazzite-lab/rpm-manifest.txt
