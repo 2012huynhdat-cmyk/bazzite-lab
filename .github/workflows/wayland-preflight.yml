@@ -2,6 +2,10 @@ name: Wayland integration preflight
 on:
   pull_request:
     branches: [main]
+    paths:
+      - .github/workflows/wayland-preflight.yml
+      - build_files/sources.env
+      - build_files/kineticwe-build-deps.txt
   workflow_dispatch:
 permissions:
   contents: read

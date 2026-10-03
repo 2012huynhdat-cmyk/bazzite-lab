@@ -38,6 +38,9 @@ uv pip install --python /usr/libexec/bazzite-lab/hyprmod/bin/python --no-deps --
 cp -a data/applications/. /usr/share/applications/
 install -d /usr/share/metainfo
 cp -a data/metainfo/. /usr/share/metainfo/
+if [[ -d data/icons ]]; then
+    cp -a data/icons/. /usr/share/icons/
+fi
 cd /
 cp -a /ctx/system_files/usr/. /usr/
 chmod +x /usr/bin/bazzite-lab-session /usr/bin/bazzite-lab-shell /usr/bin/bazzite-lab-lock /usr/bin/hyprmod
@@ -56,4 +59,6 @@ dnf5 -y copr disable avengemedia/danklinux
 dnf5 -y copr disable avengemedia/dms
 dnf5 -y copr disable nett00n/hyprland
 dnf5 clean all
+install -m 0644 /ctx/sources.env /usr/share/bazzite-lab/sources.env
+rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > /usr/share/bazzite-lab/rpm-manifest.txt
 /usr/libexec/bazzite-lab/verify-image

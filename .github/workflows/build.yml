@@ -47,6 +47,15 @@ jobs:
         run: |
           just check
 
+      - name: Check session isolation and shell syntax
+        run: |
+          bash -n build_files/build.sh
+          bash -n build_files/build-kineticwe.sh
+          for script in system_files/usr/bin/* system_files/usr/libexec/bazzite-lab/*; do
+            bash -n "$script"
+          done
+          python3 -m unittest discover -s tests -v
+
       - name: Image Name
         id: image-name
         run: |
