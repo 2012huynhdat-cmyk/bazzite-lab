@@ -3,6 +3,7 @@
 set -euo pipefail
 
 source /ctx/sources.env
+export UV_LINK_MODE=copy
 export UV_CACHE_DIR=/var/cache/bazzite-lab/uv
 export UV_PYTHON=/usr/bin/python3
 export UV_PYTHON_DOWNLOADS=never

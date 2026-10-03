@@ -7,7 +7,7 @@ niri validate --config /usr/share/bazzite-lab/niri/config.kdl
 verification_root=$(mktemp -d /tmp/hyprland-verify.XXXXXX)
 mkdir -p "$verification_root/runtime"
 chown -R nobody:nobody "$verification_root"
-runuser -u nobody -- env HOME="$verification_root" XDG_RUNTIME_DIR="$verification_root/runtime" \
+setpriv --reuid=nobody --regid=nobody --clear-groups env HOME="$verification_root" XDG_RUNTIME_DIR="$verification_root/runtime" \
     Hyprland --verify-config --config /usr/share/bazzite-lab/hypr/hyprland.lua
 rm -rf "$verification_root"
 /usr/libexec/bazzite-lab/hyprmod/bin/python -c 'import gi, cairo, hyprmod, hyprland_config, hyprland_schema; from importlib.metadata import version; print(version("hyprmod"))'
