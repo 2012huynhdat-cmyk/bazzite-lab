@@ -12,6 +12,8 @@ if [[ -d /usr/lib/kineticwe/lib/systemd/user ]]; then
 fi
 # No shell service is globally enabled. The session config starts one shell.
 dnf5 clean all
+# DNF countme state is not part of the bootc image or its runtime filesystem.
+rm -rf /run/dnf /var/lib/dnf/repos
 install -m 0644 /ctx/sources.env /usr/share/bazzite-lab/sources.env
 rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | sort > /usr/share/bazzite-lab/rpm-manifest.txt
 /usr/libexec/bazzite-lab/verify-image

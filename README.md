@@ -4,8 +4,8 @@ Bazzite NVIDIA Open Wayland Lab, using the Universal Blue template.
 Final base: `ghcr.io/ublue-os/bazzite-nvidia-open:stable`.
 Target: Ryzen 7 5700X3D / RTX 3080, starting from Bazzite Fedora 44.
 
-Stage 2 is under construction in PR #5. Do not deploy this draft until its
-build and hardware checks have been completed.
+Stage 2 provides the profiles below in PR #5. The PR remains a draft pending
+hardware validation. OCI builds and runtime checks run on GitHub Actions.
 
 ## Sessions
 
