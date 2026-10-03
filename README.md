@@ -77,6 +77,7 @@ the complete image is not frozen bit for bit, but the KineticWE revision is.
 just check
 python3 -m unittest discover -s tests -v
 bash -n build_files/build.sh
+bash -n build_files/install-runtime.sh
 bash -n build_files/build-kineticwe.sh
 just build
 ```

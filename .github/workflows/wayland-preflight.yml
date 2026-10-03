@@ -36,12 +36,9 @@ jobs:
             set -euo pipefail
             cat /etc/os-release
             dnf5 repoquery --latest-limit=1 niri noctalia dms quickshell hyprland xdg-desktop-portal-hyprland xdg-desktop-portal-gnome xwayland-satellite qt6-qtbase kf6-kconfig extra-cmake-modules uv
-            for project in avengemedia/danklinux avengemedia/dms solopasha/hyprland; do
-              if dnf5 -y copr enable "$project"; then
-                echo "AVAILABLE: $project"
-              else
-                echo "UNAVAILABLE FOR FEDORA 44: $project"
-              fi
+            for project in avengemedia/danklinux avengemedia/dms nett00n/hyprland; do
+              dnf5 -y copr enable "$project"
+              echo "AVAILABLE: $project"
             done
             dnf5 repoquery --latest-limit=1 dms quickshell quickshell-git hyprland xdg-desktop-portal-hyprland
           '
