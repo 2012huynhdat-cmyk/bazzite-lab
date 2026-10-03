@@ -1,7 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 source /ctx/sources.env
-export CMAKE_BUILD_PARALLEL_LEVEL=2
+parallel_jobs=$(nproc)
+if (( parallel_jobs > 4 )); then parallel_jobs=4; fi
+export CMAKE_BUILD_PARALLEL_LEVEL="$parallel_jobs"
 prefix=/usr/lib/kineticwe
 mkdir -p /tmp/kwe /out /tmp/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 cd /tmp/kwe
@@ -48,7 +50,7 @@ cmake -S source/portal/xdg-desktop-portal-kwe -B portal-build -GNinja \
 cmake --build portal-build
 cmake --install portal-build
 meson setup shell-build source/shell/noctalia --prefix "$prefix" --libdir lib64 --buildtype release -Dtests=disabled -Dnative_optimizations=false
-meson compile -C shell-build -j 2
+meson compile -C shell-build -j "$parallel_jobs"
 meson install -C shell-build
 mkdir -p /tmp/kwe-stage/usr/lib
 cp -a "$prefix" /tmp/kwe-stage/usr/lib/

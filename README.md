@@ -27,7 +27,7 @@ advertised before testing its custom native integration.
 ## Configuration
 
 Each combination owns `~/.config/bazzite-lab/<compositor>-<shell>/`.
-Defaults are copied on first login; existing edits are retained. Shell config
+Defaults are copied on first login; existing edits are retained. Shell configuration,
 cache and state are isolated. Applications launched by compositor bindings
 retain their normal configuration directories. Noctalia uses its dedicated
 configuration variables; DMS requires scoped XDG directories, which applications
