@@ -1,59 +1,98 @@
 # bazzite-lab
 
-Custom Bazzite OCI image for a future Wayland Lab, based on the
-[Universal Blue image template](https://github.com/ublue-os/image-template).
-The base is `ghcr.io/ublue-os/bazzite-nvidia-open:stable`.
+Bazzite NVIDIA Open Wayland Lab, using the Universal Blue template.
+Final base: `ghcr.io/ublue-os/bazzite-nvidia-open:stable`.
+Target: Ryzen 7 5700X3D / RTX 3080, starting from Bazzite Fedora 44.
 
-Stage 1 only establishes the base image and project metadata. It adds no
-packages, services, compositors, shells, rices, or user configuration.
-The template's tmux installation and podman.socket activation have been removed.
-Bazzite's existing packages and services are inherited from the base.
+Stage 2 is under construction in PR #5. Do not deploy this draft until its
+build and hardware checks have been completed.
 
-Target hardware: AMD Ryzen 7 5700X3D and NVIDIA RTX 3080.
-The starting host runs Bazzite Fedora 44, version 44.20260929.
-The requested `stable` base tag moves with upstream releases; it does not
-freeze the image to that host version.
+## Sessions
 
-## Build and validation
+Select a **Wayland Lab** entry in Bazzite's existing display manager.
 
-Run from this repository with Git, just and Podman installed:
+| Compositor | Shell profiles | Session management |
+| --- | --- | --- |
+| KineticWE V2 | Native Noctalia KWE fork | Lab supervisor |
+| Niri | DMS, Noctalia v5, Waybar minimal | Upstream niri-session |
+| Hyprland | DMS, Noctalia v5, Waybar minimal | UWSM |
+
+DMS and Noctalia manage their integrated bar, notifications, polkit and lock.
+The minimal profile starts Waybar, Mako and one polkit agent; it uses Swaylock
+on demand, without an idle daemon. HyprMod is available in Hyprland.
+No third-party rice installer is executed. Waybar provides a small baseline
+for comparing the two full shells. Cross-shell KineticWE sessions are not
+advertised before testing its custom native integration.
+
+## Configuration
+
+Each combination owns `~/.config/bazzite-lab/<compositor>-<shell>/`.
+Defaults are copied on first login; existing edits are retained. Shell config
+and cache are isolated. Ordinary applications in Niri and Hyprland retain
+their normal configuration directories. The HyprMod wrapper selects the
+current Hyprland profile.
+
+Initial keyboard layout is French. Edit `layout` in `niri/config.kdl` or
+`kb_layout` in `hypr/hyprland.lua` to change it. Super+Return opens Foot;
+Super+D opens Fuzzel; Super+Q closes a window; Super+Shift+E exits;
+Super+Shift+L locks; Super+M opens HyprMod in Hyprland.
+KineticWE retains its upstream settings and bindings.
+
+No shell service is globally enabled. Integrated shells do not start alongside
+extra notification, polkit or idle daemons. Existing user services/autostarts
+are preserved: inspect them if a previous desktop setup already starts these
+components. No host configuration is changed by building the image.
+
+Portal routing follows desktop identity: Niri uses GNOME capture and GTK
+fallbacks, Hyprland uses its own capture backend and GTK fallbacks, and
+KineticWE uses the dedicated KWE backend. Plasma's routing is preserved.
+
+## Build inputs
+
+KineticWE V2 branch `kineticwe-2.0` is pinned to
+`219f0d8dc0d57f1337603c31ccedbb0c95351057`, never HEAD. Its compositor,
+private KDE libraries, portal and native Noctalia fork are built in Release
+in a clean Fedora 44 build stage. A runtime RPM installs them under
+`/usr/lib/kineticwe`, without replacing stock KDE or upstream Noctalia files.
+The dependency list follows the pinned upstream spec, excluding its greeter.
+
+HyprMod's commit is pinned in `build_files/sources.env`. Its Python dependencies
+use upstream lockfile hashes and Fedora PyGObject/Cairo. It installs in
+`/usr/libexec/bazzite-lab/hyprmod`, not in a user's home directory.
+
+Niri and Noctalia use Fedora packages. DMS uses the avengemedia/dms and
+avengemedia/danklinux COPRs. Hyprland uses nett00n/hyprland for Fedora 44.
+External repositories have package allowlists and are disabled after builds.
+No Rawhide repository, host rpm-ostree layering or allowerasing is used.
+
+Source pins and RPM inventory are stored in `/usr/share/bazzite-lab/sources.env`
+and `rpm-manifest.txt`. The stable base tag and package repositories move;
+the complete image is not frozen bit for bit, but the KineticWE revision is.
+
+## Validation
 
 ```bash
 just check
+python3 -m unittest discover -s tests -v
 bash -n build_files/build.sh
+bash -n build_files/build-kineticwe.sh
 just build
 ```
 
-The output is `localhost/bazzite-lab:latest`. The Containerfile runs
-`bootc container lint` at the end; build success includes that check.
-The Justfile supplies the project OCI labels from `image-template.env`.
+Output: `localhost/bazzite-lab:latest`. The build checks Niri configuration,
+required runtime binaries and libraries, pinned KineticWE revision, Python
+imports, OCI identity and bootc container lint. Session tests check isolation
+and preservation without starting graphical sessions.
 
-Pull requests to `main` run the container build workflow and verify image
-identity. The base already supplies chunked layers. The optional legacy
-rootfs rechunker is not used: it loses project labels and inherited OCI
-configuration. PR builds do not publish or sign images.
-The existing main-branch workflow publishes to
-`ghcr.io/2012huynhdat-cmyk/bazzite-lab:latest` and signs with Cosign.
-Before publication, configure the repository's `SIGNING_SECRET` and retain
-the matching public key (`cosign.pub`); no public key is present in Stage 1.
+Bazzite's inherited chunked layers and OCI configuration are retained. The
+legacy rootfs-only rechunker is not used. PR builds do not publish or sign.
+Main publication requires SIGNING_SECRET and its matching cosign.pub.
+No merge, host rebase or deployment is performed here.
 
-The build context and script mounts remain in place for later stages.
-The Stage 1 build script intentionally performs no system modifications.
-No host rebase, deployment, or rollback operation is performed by these builds.
+On the RTX 3080, still validate login, rendering, XWayland, monitors/VRR,
+audio, clipboard, browser/OBS capture portals, one notification/polkit agent,
+locking/unlocking, logout, switching sessions and returning to Plasma.
+Verify access to the preceding bootc deployment for rollback.
 
-## Later stages
-
-KineticWE V2, Hyprland, Niri, DMS, Noctalia and HyprMod are future work.
-KineticWE must use branch `kineticwe-2.0` at commit
-`219f0d8dc0d57f1337603c31ccedbb0c95351057`, with Release or RelWithDebInfo
-and a reproducible system installation in the image.
-Future changes must isolate shell configurations and configure portals and
-session services per compositor while preserving bootc rollback.
-
-ISO generation is deferred. The inherited disk workflow and Justfile currently
-reference a missing `disk_config/iso.toml`, and the KDE/GNOME example files
-still target the upstream template image. These must be configured and validated
-before building an installer. No ISO is built by Stage 1.
-
-A successful OCI build does not validate booting, NVIDIA operation, or rollback
-on the target hardware; those require a later deployment test.
+ISO generation remains deferred. The inherited disk workflow needs the missing
+disk_config/iso.toml and project-specific image references before use.
