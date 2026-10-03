@@ -21,7 +21,7 @@ dnf5 install -y /kineticwe-rpms/*.rpm \
     xdg-desktop-portal-gnome xdg-desktop-portal-gtk xdg-desktop-portal-hyprland \
     dms quickshell-git matugen cliphist danksearch dgop cava \
     waybar mako fuzzel swaylock wl-clipboard foot \
-    python3-gobject python3-cairo gtk4 libadwaita uv git
+    python3-gobject python3-cairo python3-hatchling gtk4 libadwaita uv git polkit-gnome
 
 # Install HyprMod from a pinned checkout and locked, hashed Python dependencies.
 # Do not run the upstream installer or write into users' home directories.
@@ -34,23 +34,20 @@ cd /tmp/hyprmod
 uv export --frozen --no-dev --no-emit-project --no-emit-package pygobject --no-emit-package pycairo -o /tmp/hyprmod-requirements.txt
 uv venv --system-site-packages --python /usr/bin/python3 /usr/libexec/bazzite-lab/hyprmod
 uv pip install --python /usr/libexec/bazzite-lab/hyprmod/bin/python --require-hashes -r /tmp/hyprmod-requirements.txt
-install -d /usr/libexec/bazzite-lab/hyprmod/src
-cp -a hyprmod /usr/libexec/bazzite-lab/hyprmod/src/
-glib-compile-schemas /usr/libexec/bazzite-lab/hyprmod/src/hyprmod/data
+uv pip install --python /usr/libexec/bazzite-lab/hyprmod/bin/python --no-deps --no-build-isolation .
 cp -a data/applications/. /usr/share/applications/
 install -d /usr/share/metainfo
 cp -a data/metainfo/. /usr/share/metainfo/
 cd /
 cp -a /ctx/system_files/usr/. /usr/
-chmod +x /usr/bin/bazzite-lab-session /usr/bin/bazzite-lab-shell /usr/bin/hyprmod
+chmod +x /usr/bin/bazzite-lab-session /usr/bin/bazzite-lab-shell /usr/bin/bazzite-lab-lock /usr/bin/hyprmod
 chmod +x /usr/libexec/bazzite-lab/verify-image
 
 # Publish only the dedicated KWE portal's discovery files. Its resources remain
 # private; generic KDE portal discovery stays untouched.
-for relative in share/xdg-desktop-portal share/dbus-1/services; do
-    install -d "/usr/$relative"
-    cp -a "/usr/lib/kineticwe/$relative/." "/usr/$relative/"
-done
+install -d /usr/share/xdg-desktop-portal /usr/share/dbus-1/services
+cp -a /usr/lib/kineticwe/share/xdg-desktop-portal/. /usr/share/xdg-desktop-portal/
+cp -a /usr/lib/kineticwe/share/dbus-1/services/org.freedesktop.impl.portal.desktop.kwe.service /usr/share/dbus-1/services/
 if [[ -d /usr/lib/kineticwe/lib/systemd/user ]]; then
     cp -a /usr/lib/kineticwe/lib/systemd/user/*kwe* /usr/lib/systemd/user/
 fi

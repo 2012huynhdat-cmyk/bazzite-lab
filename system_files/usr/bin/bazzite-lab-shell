@@ -10,11 +10,18 @@ case "$profile" in
     *-noctalia) exec noctalia ;;
     kineticwe-native) exec /usr/lib/kineticwe/bin/noctalia-kwe ;;
     *-minimal)
+        mkdir -p "$XDG_CONFIG_HOME/waybar"
+        [[ -f "$XDG_CONFIG_HOME/waybar/config.jsonc" ]] || cp /usr/share/bazzite-lab/waybar/config.jsonc "$XDG_CONFIG_HOME/waybar/config.jsonc"
+        [[ -f "$XDG_CONFIG_HOME/waybar/style.css" ]] || cp /usr/share/bazzite-lab/waybar/style.css "$XDG_CONFIG_HOME/waybar/style.css"
         mako &
         notifier=$!
-        trap 'kill "$notifier" 2>/dev/null || true' EXIT
+        /usr/libexec/polkit-gnome-authentication-agent-1 &
+        agent=$!
+        trap 'kill "$notifier" "$agent" "${bar:-}" 2>/dev/null || true' EXIT
+        trap 'exit 0' TERM INT HUP
         waybar &
-        wait $!
+        bar=$!
+        wait "$bar"
         ;;
     *) exit 2 ;;
 esac

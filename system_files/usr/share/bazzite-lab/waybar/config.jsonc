@@ -1,0 +1,11 @@
+{
+  "layer": "top",
+  "height": 30,
+  "modules-left": ["custom/lab"],
+  "modules-center": ["clock"],
+  "modules-right": ["pulseaudio", "network", "tray"],
+  "custom/lab": {"format": "Wayland Lab", "on-click": "fuzzel"},
+  "clock": {"format": "{:%a %d %b  %H:%M}"},
+  "pulseaudio": {"format": "Vol {volume}%"},
+  "network": {"format-ethernet": "Ethernet", "format-wifi": "{essid}", "format-disconnected": "Offline"}
+}

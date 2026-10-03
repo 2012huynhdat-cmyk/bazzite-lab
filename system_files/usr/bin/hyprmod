@@ -3,5 +3,4 @@ set -euo pipefail
 if [[ ${BAZZITE_LAB_PROFILE:-} == hyprland-* ]]; then
     export XDG_CONFIG_HOME="${BAZZITE_LAB_CONFIG_ROOT:?}/$BAZZITE_LAB_PROFILE"
 fi
-export PYTHONPATH=/usr/libexec/bazzite-lab/hyprmod/src
 exec /usr/libexec/bazzite-lab/hyprmod/bin/python -c 'from hyprmod.main import main; main()' "$@"

@@ -14,6 +14,7 @@ binds {
     Mod+J { focus-window-down; }
     Mod+K { focus-window-up; }
     Mod+Shift+E { quit; }
+    Mod+Shift+L { spawn "bazzite-lab-lock"; }
     Mod+F { maximize-column; }
     Print { screenshot; }
 }

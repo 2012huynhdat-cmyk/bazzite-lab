@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+profile=${BAZZITE_LAB_PROFILE:?Launch a Wayland Lab session first}
+export XDG_CONFIG_HOME="${BAZZITE_LAB_CONFIG_ROOT:?}/$profile"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/bazzite-lab/$profile"
+case "$profile" in
+    *-dms) exec dms ipc call lock lock ;;
+    *-noctalia) exec noctalia msg session lock ;;
+    kineticwe-native) exec /usr/lib/kineticwe/bin/noctalia-kwe msg session lock ;;
+    *-minimal) exec swaylock --color 111111 ;;
+    *) exit 2 ;;
+esac

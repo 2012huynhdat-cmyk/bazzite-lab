@@ -12,5 +12,5 @@ for binary in kinetic-we noctalia-kwe; do
 done
 test "$(cat /usr/lib/kineticwe/SOURCE_COMMIT)" = 219f0d8dc0d57f1337603c31ccedbb0c95351057
 niri validate --config /usr/share/bazzite-lab/niri/config.kdl
-PYTHONPATH=/usr/libexec/bazzite-lab/hyprmod/src /usr/libexec/bazzite-lab/hyprmod/bin/python -c 'import gi, cairo, hyprmod, hyprland_config, hyprland_schema'
+/usr/libexec/bazzite-lab/hyprmod/bin/python -c 'import gi, cairo, hyprmod, hyprland_config, hyprland_schema; from importlib.metadata import version; print(version("hyprmod"))'
 rpm -q kineticwe-lab niri hyprland noctalia dms

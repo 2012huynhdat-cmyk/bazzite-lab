@@ -22,9 +22,9 @@ case "$compositor" in
     hyprland)
         export XDG_CURRENT_DESKTOP=Hyprland
         mkdir -p "$profile/hypr"
-        [[ -f "$profile/hypr/hyprland.conf" ]] || cp /usr/share/bazzite-lab/hypr/hyprland.conf "$profile/hypr/hyprland.conf"
-        [[ -f "$profile/hypr/hyprland-gui.conf" ]] || touch "$profile/hypr/hyprland-gui.conf"
-        exec uwsm start -- /usr/bin/Hyprland --config "$profile/hypr/hyprland.conf"
+        config=hyprland.lua
+        [[ -f "$profile/hypr/$config" ]] || cp "/usr/share/bazzite-lab/hypr/$config" "$profile/hypr/$config"
+        exec uwsm start -- /usr/bin/Hyprland --config "$profile/hypr/$config"
         ;;
     kineticwe)
         export XDG_CURRENT_DESKTOP=KineticWE
