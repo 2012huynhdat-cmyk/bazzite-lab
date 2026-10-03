@@ -17,6 +17,7 @@ if ldd "$portal" | grep -q 'not found'; then
     exit 1
 fi
 grep -Fx "Exec=$portal" /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.kwe.service
+test -x /usr/libexec/kf6/polkit-kde-authentication-agent-1
 test "$(cat /usr/lib/kineticwe/SOURCE_COMMIT)" = 219f0d8dc0d57f1337603c31ccedbb0c95351057
 niri validate --config /usr/share/bazzite-lab/niri/config.kdl
 verification_root=$(mktemp -d /tmp/hyprland-verify.XXXXXX)

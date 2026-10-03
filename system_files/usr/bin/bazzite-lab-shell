@@ -23,7 +23,7 @@ case "$profile" in
         [[ -f "$XDG_CONFIG_HOME/waybar/style.css" ]] || cp /usr/share/bazzite-lab/waybar/style.css "$XDG_CONFIG_HOME/waybar/style.css"
         mako &
         notifier=$!
-        /usr/libexec/polkit-gnome-authentication-agent-1 &
+        /usr/libexec/kf6/polkit-kde-authentication-agent-1 &
         agent=$!
         trap 'kill "$notifier" "$agent" "${bar:-}" 2>/dev/null || true' EXIT
         trap 'exit 0' TERM INT HUP
