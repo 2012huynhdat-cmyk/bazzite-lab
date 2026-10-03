@@ -28,8 +28,10 @@ advertised before testing its custom native integration.
 
 Each combination owns `~/.config/bazzite-lab/<compositor>-<shell>/`.
 Defaults are copied on first login; existing edits are retained. Shell config
-and cache are isolated. Ordinary applications in Niri and Hyprland retain
-their normal configuration directories. The HyprMod wrapper selects the
+cache and state are isolated. Applications launched by compositor bindings
+retain their normal configuration directories. Noctalia uses its dedicated
+configuration variables; DMS requires scoped XDG directories, which applications
+launched directly by its shell may inherit. The HyprMod wrapper selects the
 current Hyprland profile.
 
 Initial keyboard layout is French. Edit `layout` in `niri/config.kdl` or

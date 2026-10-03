@@ -1,7 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 profile=${BAZZITE_LAB_PROFILE:?Launch a Wayland Lab session first}
-export XDG_CONFIG_HOME="${BAZZITE_LAB_CONFIG_ROOT:?}/$profile"
+profile_config="${BAZZITE_LAB_CONFIG_ROOT:?}/$profile"
+case "$profile" in
+    *-noctalia|kineticwe-native) export NOCTALIA_CONFIG_HOME="$profile_config" ;;
+    *) export XDG_CONFIG_HOME="$profile_config" ;;
+esac
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}/bazzite-lab/$profile"
 case "$profile" in
     *-dms) exec dms ipc call lock lock ;;

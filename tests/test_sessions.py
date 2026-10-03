@@ -23,6 +23,7 @@ class Sessions(unittest.TestCase):
         self.env = dict(os.environ, HOME=str(self.path), PATH=f"{self.bin}:/usr/bin:/bin")
         self.env.pop("XDG_CONFIG_HOME", None)
         self.env.pop("XDG_CACHE_HOME", None)
+        self.env.pop("XDG_STATE_HOME", None)
 
     def session(self, compositor, shell):
         source = (ROOT / "system_files/usr/bin/bazzite-lab-session").read_text()
@@ -54,7 +55,10 @@ class Sessions(unittest.TestCase):
             result = subprocess.run(["bash", str(ROOT / "system_files/usr/bin/bazzite-lab-shell")], env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             outputs.append(json.loads(result.stdout)["env"])
-        self.assertEqual(len({x["XDG_CONFIG_HOME"] for x in outputs}), 3)
+        self.assertEqual(len({x.get("NOCTALIA_CONFIG_HOME", x.get("XDG_CONFIG_HOME")) for x in outputs}), 3)
+        self.assertNotIn("XDG_CONFIG_HOME", outputs[1])
+        self.assertIn("NOCTALIA_STATE_HOME", outputs[1])
+        self.assertNotEqual(outputs[0]["XDG_STATE_HOME"], outputs[2]["XDG_STATE_HOME"])
         self.assertEqual(len({x["XDG_CACHE_HOME"] for x in outputs}), 3)
 
     def test_unsupported_session_fails_before_creating_config(self):
