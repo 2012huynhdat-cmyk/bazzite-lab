@@ -3,6 +3,9 @@
 set -euo pipefail
 
 source /ctx/sources.env
+export UV_CACHE_DIR=/var/cache/bazzite-lab/uv
+export UV_PYTHON=/usr/bin/python3
+export UV_PYTHON_DOWNLOADS=never
 dnf5 -y copr enable avengemedia/danklinux
 dnf5 -y copr enable avengemedia/dms
 dnf5 -y copr enable nett00n/hyprland
@@ -50,3 +53,9 @@ for file in /etc/yum.repos.d/*avengemedia*.repo /etc/yum.repos.d/*nett00n*hyprla
     [[ -f "$file" ]] && sed -i 's/^enabled=.*/enabled=0/' "$file"
 done
 dnf5 clean all
+
+# Check the installed graphical runtime before the long source build.
+cp -a /ctx/system_files/usr/. /usr/
+chmod +x /usr/bin/bazzite-lab-session /usr/bin/bazzite-lab-shell /usr/bin/bazzite-lab-lock /usr/bin/hyprmod
+chmod +x /usr/libexec/bazzite-lab/verify-image
+/usr/libexec/bazzite-lab/verify-image --runtime-only

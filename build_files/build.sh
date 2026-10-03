@@ -2,10 +2,6 @@
 set -euo pipefail
 
 dnf5 install -y /kineticwe-rpms/*.rpm
-cp -a /ctx/system_files/usr/. /usr/
-chmod +x /usr/bin/bazzite-lab-session /usr/bin/bazzite-lab-shell /usr/bin/bazzite-lab-lock /usr/bin/hyprmod
-chmod +x /usr/libexec/bazzite-lab/verify-image
-
 # Publish only the dedicated KWE portal's discovery files. Its resources remain
 # private; generic KDE portal discovery stays untouched.
 install -d /usr/share/xdg-desktop-portal /usr/share/dbus-1/services
